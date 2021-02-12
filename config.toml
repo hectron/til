@@ -1,0 +1,15 @@
+baseURL = "https://hectron.github.io"
+title = "TIL"
+
+# This stuff is kinda important to work with vimwiki
+theme = "tale"
+contentDir = "content"
+sectionPagesMenu = "main"
+Paginate = "4"
+
+[params]
+GitHubUser = "hectron"
+css = ["custom.css"]
+
+[Author]
+name = "Hector Rios"
