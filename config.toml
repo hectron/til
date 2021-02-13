@@ -6,6 +6,7 @@ theme = "tale"
 contentDir = "content/til"
 sectionPagesMenu = "main"
 Paginate = "4"
+enableEmoji = true
 
 [params]
 GitHubUser = "hectron"
@@ -13,3 +14,8 @@ css = ["custom.css"]
 
 [Author]
 name = "Hector Rios"
+
+[module]
+  [[module.mounts]]
+  source = "content/til"
+  target = "content"
