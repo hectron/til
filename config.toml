@@ -9,7 +9,7 @@ enableEmoji = true
 
 [params]
 GitHubUser = "hectron"
-css = ["custom.css"]
+# css = ["custom.css"]
 
 [Author]
 name = "Hector Rios"
