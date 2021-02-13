@@ -3,7 +3,7 @@ title = "TIL"
 
 # This stuff is kinda important to work with vimwiki
 theme = "tale"
-contentDir = "content"
+contentDir = "content/til"
 sectionPagesMenu = "main"
 Paginate = "4"
 
