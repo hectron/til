@@ -1,4 +1,4 @@
-baseURL = "/"
+baseURL = "/til"
 title = "TIL"
 
 # This stuff is kinda important to work with vimwiki
