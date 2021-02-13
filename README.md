@@ -8,8 +8,7 @@ This repository is tightly coupled with my Vimwiki workflow.
 
 I use vimwiki to write my diary notes into `content/til`.
 
-
-```vimrc
+```vim
 " set .md as default vim-wiki format
 let wiki = {}
 let wiki.<some-setting> = "<some-value>"
@@ -31,7 +30,7 @@ if $TIL_DIR != ""
   let til_wiki.auto_generate_links = 1
   let til_wiki.auto_generate_tags = 1
   let til_wiki.auto_toc = 1 
-  call add(wiki_list, til_wiki)
+  let wiki_list = [til_wiki, wiki] " note that this will result in TIL to be the primary wiki 
 endif
 
 let g:vimwiki_list = wiki_list
