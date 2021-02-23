@@ -2,6 +2,9 @@
 title: Open new tmux panes in current dir
 date: 2021-02-15
 summary: Learn this little simple lifehack to improve your quality of life
+tags:
+  - tmux
+  - cli
 ---
 
 # tl;dr

@@ -4,6 +4,9 @@ date: 2021-02-23
 summary: >
   Kubernetes' Service Catalog is less documented/blogged about.
   Learn how to delete stale instance bindings for Service Catalog instances
+tags:
+  - kubernetes
+  - cli
 ---
 
 # tl;dr
@@ -48,7 +51,6 @@ Once the bad binding was removed, I was able to deprovision the bad instance by 
 
 # Closing thoughts
 
-When I looked up the webpage for [`svcat`](https://svc-cat.io/docs/cli/#provision-a-service), I found the information I was looking for.
-However, I didn't find a blog or any kind of article with the errors/keywords of issues that I was looking for. Thus, this post was born.
+When I looked up the webpage for [`svcat`](https://svc-cat.io/docs/cli/#provision-a-service), I found the information I was looking for.  However, I didn't find a blog or any kind of article with the errors/keywords of issues that I was looking for. Thus, this post was born.
 
 I hope that this is helpful.

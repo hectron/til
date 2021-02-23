@@ -2,6 +2,9 @@
 title: fzf-vim as your search guide
 date: 2021-02-16
 summary: A better way to search for files in vim
+tags:
+  - vim
+  - cli
 ---
 
 # tl;dr
