@@ -4,7 +4,7 @@ title = "TIL"
 # This stuff is kinda important to work with vimwiki
 theme = "tale"
 sectionPagesMenu = "main"
-Paginate = "4"
+Paginate = "12"
 enableEmoji = true
 
 [params]
