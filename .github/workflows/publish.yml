@@ -1,7 +1,7 @@
 name: 🚀 Publish Github Pages
 on: push
 jobs:
-  "Compile and push to GH Pages":
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
