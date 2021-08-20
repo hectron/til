@@ -31,3 +31,16 @@ endif
 
 " any customization happens below here
 ```
+
+## The setup
+
+Neovim's primary user configuration directory is:
+
+```
+Unix                              ~/.config/nvim/
+Windows                           ~/AppData/Local/nvim/
+If $XDG_CONFIG_HOME is defined:   $XDG_CONFIG_HOME/nvim
+
+For information, see `:help init.vim`
+```
+
