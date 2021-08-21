@@ -37,6 +37,12 @@ endif
 " any customization happens below here
 ```
 
+## Preface
+
+I'm a huge fan of neovim. It's a better version of vim that is more lightweight, but also has an extensible API that
+is incredible and has a very active developer community, which means that they release many more features than vim. The
+more of a Vim power you become, the more that Neovim will become appealing to you.
+
 ## The setup
 
 Neovim's primary user configuration directory is:
