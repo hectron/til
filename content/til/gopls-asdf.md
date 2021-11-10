@@ -10,7 +10,7 @@ tags:
 
 # tl;dr
 
-Ensure that your `GOPATH` has your `asdf` go env.
+Ensure that your `GOPATH` has your `asdf` go env!
 
 ```zsh
 export GOROOT="$HOME/.asdf/installs/golang/1.17.go"
