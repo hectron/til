@@ -1,0 +1,277 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Quickly download a Github asset from the latest release &#183; TIL</title><link rel=stylesheet href=/til/css/style.css><link rel=stylesheet href=/til/css/fonts.css><link rel=icon type=image/png sizes=32x32 href=/til/images/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/til/images/favicon-16x16.png><link rel=apple-touch-icon sizes=180x180 href=/til/images/apple-touch-icon.png><link href rel=alternate type=application/rss+xml title=TIL></head><body><nav class=nav><div class=nav-container><a href=/><h2 class=nav-title>TIL</h2></a><ul></ul></div></nav><main><div class=post><div class=post-info><span>Written by</span>
+Hector Rios<br><span>on&nbsp;</span><time datetime="2021-03-16 00:00:00 +0000 UTC">March 16, 2021</time></div><h1 class=post-title>Quickly download a Github asset from the latest release</h1><div class=post-line></div><h1 id=tldr>tl;dr</h1><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>download_url<span style=color:#f92672>=</span><span style=color:#66d9ef>$(</span>
+</span></span><span style=display:flex><span>  curl -sL https://api.github.com/repos/&lt;owner&gt;/&lt;repo&gt;/releases/&lt;tag&gt; <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>  | jq -r <span style=color:#e6db74>&#39;.assets[] | select(.name | contains(&#34;unique identifier&#34;)) | .browser_download_url&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>)</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>curl -sOL <span style=color:#e6db74>&#34;</span>$download_url<span style=color:#e6db74>&#34;</span>
+</span></span></code></pre></div><h1 id=motivation>Motivation</h1><p>I recently was working on automating setting up a new machine, which meant that I needed to figure out which tools needed to be ported over. For each tool I found, I wanted to write a simple bash script to install the tool. Some tools were a simple <code>apt-get</code> and others required a more manual install.</p><p>I found a few tools I installed that were <code>.deb</code> assets in a Github release for a given repo (e.g. <a href=https://github.com/sharkdp/bat/><code>sharkdp/bat</code></a>). Some tools version their compiled assets by adding a version number to the file name, which means that programmatically getting the latest released version of the tool requires a few steps. Thus, this effort was started.</p><h1 id=github-api>Github API</h1><p>One neat thing about Github repos is that you can go to <a href=https://api.github.com/repos/>https://api.github.com/repos/</a>//releases/ to find out more information about a release, in a JSON response.</p><p>In our example of <a href=https://github.com/sharkdp/bat><code>sharkdp/bat</code></a>, the following URL would give us information about the latest release:</p><pre tabindex=0><code>https://api.github.com/repos/sharkdp/bat/releases/latest
+</code></pre><p>At the time of writing, the response looked like:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/39023558&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;assets_url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/39023558/assets&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;upload_url&#34;</span>: <span style=color:#e6db74>&#34;https://uploads.github.com/repos/sharkdp/bat/releases/39023558/assets{?name,label}&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;html_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/tag/v0.18.0&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>39023558</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;author&#34;</span>: {
+</span></span><span style=display:flex><span>		<span style=color:#f92672>&#34;redacted-for&#34;</span>: <span style=color:#e6db74>&#34;saving-space-in-this-blog-post&#34;</span>
+</span></span><span style=display:flex><span>  },
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDc6UmVsZWFzZTM5MDIzNTU4&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;tag_name&#34;</span>: <span style=color:#e6db74>&#34;v0.18.0&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;target_commitish&#34;</span>: <span style=color:#e6db74>&#34;master&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;v0.18.0&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;draft&#34;</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;prerelease&#34;</span>: <span style=color:#66d9ef>false</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:04:49Z&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;published_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:25:07Z&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;assets&#34;</span>: [
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755515&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755515</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTE1&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-musl_0.18.0_amd64.deb&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {
+</span></span><span style=display:flex><span>				<span style=color:#f92672>&#34;redacted-for&#34;</span>: <span style=color:#e6db74>&#34;saving-space-in-this-blog-post&#34;</span>
+</span></span><span style=display:flex><span>      },
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/octet-stream&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2108024</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>444</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:33Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:34Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-musl_0.18.0_amd64.deb&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755569&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755569</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTY5&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-musl_0.18.0_i686.deb&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2433507</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>45</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:23Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:23Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-aarch64-unknown-linux-gnu.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755580&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755580</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTgw&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-arm-unknown-linux-gnueabihf.tar.gz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2507785</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>25</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:54Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:55Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-arm-unknown-linux-gnueabihf.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755699&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755699</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1Njk5&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-i686-pc-windows-msvc.zip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/zip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2534190</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>18</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:38:47Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:38:48Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-i686-pc-windows-msvc.zip&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755531&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755531</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTMx&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-i686-unknown-linux-gnu.tar.gz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2632101</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>22</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:33:22Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:33:23Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-i686-unknown-linux-gnu.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755568&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755568</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTY4&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-i686-unknown-linux-musl.tar.gz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2636932</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>25</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:38Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:38Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-i686-unknown-linux-musl.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755587&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755587</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTg3&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-x86_64-apple-darwin.tar.gz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2444324</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>138</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:35:11Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:35:12Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-x86_64-apple-darwin.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755704&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755704</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NzA0&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-x86_64-pc-windows-gnu.zip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/zip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2760469</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>34</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:39:19Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:39:20Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-x86_64-pc-windows-gnu.zip&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755581&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755581</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTgx&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-x86_64-pc-windows-msvc.zip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/zip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2694485</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>1786</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:35:00Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:35:01Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-x86_64-pc-windows-msvc.zip&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755519&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755519</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTE5&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-x86_64-unknown-linux-gnu.tar.gz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2580440</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>860</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:51Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:51Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-x86_64-unknown-linux-gnu.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755514&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755514</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTE0&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat-v0.18.0-x86_64-unknown-linux-musl.tar.gz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/gzip&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2602252</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>333</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:33Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:34Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat-v0.18.0-x86_64-unknown-linux-musl.tar.gz&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755520&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755520</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTIw&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat_0.18.0_amd64.deb&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/octet-stream&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2078288</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>1503</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:51Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:32:51Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat_0.18.0_amd64.deb&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755553&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755553</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTUz&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat_0.18.0_arm64.deb&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/octet-stream&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>1884996</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>93</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:23Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:23Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat_0.18.0_arm64.deb&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755579&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755579</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTc5&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat_0.18.0_armhf.deb&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/octet-stream&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>1922892</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>106</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:54Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:34:55Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat_0.18.0_armhf.deb&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/releases/assets/32755530&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#ae81ff>32755530</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;node_id&#34;</span>: <span style=color:#e6db74>&#34;MDEyOlJlbGVhc2VBc3NldDMyNzU1NTMw&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;bat_0.18.0_i686.deb&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;label&#34;</span>: <span style=color:#e6db74>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;uploader&#34;</span>: {},
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;content_type&#34;</span>: <span style=color:#e6db74>&#34;application/octet-stream&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;state&#34;</span>: <span style=color:#e6db74>&#34;uploaded&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;size&#34;</span>: <span style=color:#ae81ff>2140228</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;download_count&#34;</span>: <span style=color:#ae81ff>26</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;created_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:33:22Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;updated_at&#34;</span>: <span style=color:#e6db74>&#34;2021-02-28T22:33:22Z&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;browser_download_url&#34;</span>: <span style=color:#e6db74>&#34;https://github.com/sharkdp/bat/releases/download/v0.18.0/bat_0.18.0_i686.deb&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>  ],
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;tarball_url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/tarball/v0.18.0&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;zipball_url&#34;</span>: <span style=color:#e6db74>&#34;https://api.github.com/repos/sharkdp/bat/zipball/v0.18.0&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;body&#34;</span>: <span style=color:#e6db74>&#34;redacted-to-save-space&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h1 id=programatically-downloading-an-asset>Programatically downloading an asset</h1><p>In order to programmatically parse outwhich asset I needed, I used <a href=https://stedolan.github.io/jq/><code>jq</code></a> to parse the json response, and find the latest <code>amd64.deb</code> file.</p><p>Since there is a <code>bat-musl_&lt;version>_amd64.deb</code> and a <code>bat_&lt;version>_amd64.deb</code>, I needed to write the following <code>jq</code> expression:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>jq -r <span style=color:#e6db74>&#39;.assets[] | select(.name | (contains(&#34;bat_&#34;) and contains(&#34;amd64.deb&#34;))) | .browser_download_url&#39;</span>
+</span></span></code></pre></div><p>Breaking this expression down:</p><ul><li><code>.assets[]</code> lets us operate on the <code>assets</code> value (an array of objects).</li><li><code>.select</code> allows us to filter <code>assets</code>. We use the <code>.name</code> attribute, and if it contains both <code>bat_</code> (not <code>bat-musl</code>) and <code>amd64.deb</code>.</li><li><code>.browser_download_url</code> is the output value of the assets we selected (which should just be one).</li></ul><p>Once we have the download url, we simply do a curl to download the file. Combining this all together:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># This sets the output of jq to the $download_url bash variable.</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>download_url<span style=color:#f92672>=</span><span style=color:#66d9ef>$(</span>
+</span></span><span style=display:flex><span>  curl -sL https://api.github.com/repos/sharkdp/bat/releases/latest <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>  | jq -r <span style=color:#e6db74>&#39;.assets[] | select(.name | (contains(&#34;bat_&#34;) and contains(&#34;amd64.deb&#34;))) | .browser_download_url&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>)</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>curl -sOL <span style=color:#e6db74>&#34;</span>$download_url<span style=color:#e6db74>&#34;</span>
+</span></span></code></pre></div><p>One thing not mentioned here is that in order to programmatically install this, I would either (a) need to know the filename or (b) set the filename. Since this was a one time thing (on a new computer), I figured option b would be the easiest to get me there.</p><p>So I modified the curl command which downloads the <code>.deb</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>curl -sL <span style=color:#e6db74>&#34;</span>$download_url<span style=color:#e6db74>&#34;</span> bat-latest.deb
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Install the package</span>
+</span></span><span style=display:flex><span>sudo dpkg -i bat-latest.deb
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># Delete installer</span>
+</span></span><span style=display:flex><span>rm bat-latest.deb
+</span></span></code></pre></div></div><div class=pagination><a href=/til/deleting-kubernetes-service-catalog-bindings/ class="left arrow">&#8592;</a>
+<a href=/til/git-includeif/ class="right arrow">&#8594;</a>
+<a href=# class=top>Top</a></div></main><footer><span>&copy; <time datetime="2022-08-12 02:38:35.020150803 +0000 UTC m=+0.076542411">2022</time> Hector Rios. Made with <a href=https://gohugo.io>Hugo</a> using the <a href=https://github.com/EmielH/tale-hugo/>Tale</a> theme.</span></footer></body></html>

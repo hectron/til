@@ -1,0 +1,19 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Git config's includeIf for multiple configs &#183; TIL</title><link rel=stylesheet href=/til/css/style.css><link rel=stylesheet href=/til/css/fonts.css><link rel=icon type=image/png sizes=32x32 href=/til/images/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/til/images/favicon-16x16.png><link rel=apple-touch-icon sizes=180x180 href=/til/images/apple-touch-icon.png><link href rel=alternate type=application/rss+xml title=TIL></head><body><nav class=nav><div class=nav-container><a href=/><h2 class=nav-title>TIL</h2></a><ul></ul></div></nav><main><div class=post><div class=post-info><span>Written by</span>
+Hector Rios<br><span>on&nbsp;</span><time datetime="2021-03-22 00:00:00 +0000 UTC">March 22, 2021</time></div><h1 class=post-title>Git config's includeIf for multiple configs</h1><div class=post-line></div><h1 id=tldr>tl;dr</h1><pre tabindex=0><code class=language-git data-lang=git>[includeIf &#34;gitdir:~/my/personal/directory&#34;]
+  path = ~/.gitconfig.local
+  
+[includeIf &#34;gitdir:~/my/work/directory&#34;]
+  path = ~/.gitconfig.work
+  
+# In ~/.gitconfig.local
+[author]
+  email = &#34;personal-email@provider.com&#34;
+  name = &#34;first last&#34;
+  
+# In ~/.gitconfig.work
+[author]
+  email = &#34;address@work.com
+  name = &#34;work-username&#34;
+</code></pre></div><div class=pagination><a href=/til/download-github-asset-easily/ class="left arrow">&#8592;</a>
+<a href=/til/psql_helpers/ class="right arrow">&#8594;</a>
+<a href=# class=top>Top</a></div></main><footer><span>&copy; <time datetime="2022-08-12 02:38:35.015614026 +0000 UTC m=+0.072005634">2022</time> Hector Rios. Made with <a href=https://gohugo.io>Hugo</a> using the <a href=https://github.com/EmielH/tale-hugo/>Tale</a> theme.</span></footer></body></html>

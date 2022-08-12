@@ -1,0 +1,27 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>psql watch + auto extend &#183; TIL</title><link rel=stylesheet href=/til/css/style.css><link rel=stylesheet href=/til/css/fonts.css><link rel=icon type=image/png sizes=32x32 href=/til/images/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/til/images/favicon-16x16.png><link rel=apple-touch-icon sizes=180x180 href=/til/images/apple-touch-icon.png><link href rel=alternate type=application/rss+xml title=TIL></head><body><nav class=nav><div class=nav-container><a href=/><h2 class=nav-title>TIL</h2></a><ul></ul></div></nav><main><div class=post><div class=post-info><span>Written by</span>
+Hector Rios<br><span>on&nbsp;</span><time datetime="2021-05-04 00:00:00 +0000 UTC">May 4, 2021</time></div><h1 class=post-title>psql watch + auto extend</h1><div class=post-line></div><h1 id=tl-dr>tl; dr</h1><p>(In <code>psql</code>)</p><pre tabindex=0><code class=language-psql data-lang=psql>-- to auto-extend results
+
+\x auto
+
+-- to re-run a query every second
+\watch 1
+</code></pre><h2 id=auto-extending-results>Auto-extending results</h2><p>The <code>\x</code> flag in psql is used to change the way results are displayed from a
+query.</p><p>Often times it&rsquo;s helpful to use <code>\x</code> to enable extended mode. This mode allows
+you to view columns vertically.</p><p>With <code>\x</code> disabled, results are displayed as:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=display:flex><span><span style=color:#f92672>|</span> id <span style=color:#f92672>|</span> name  <span style=color:#f92672>|</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>|</span> <span style=color:#ae81ff>1</span>  <span style=color:#f92672>|</span> reily <span style=color:#f92672>|</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>|</span> <span style=color:#ae81ff>2</span>  <span style=color:#f92672>|</span> alex  <span style=color:#f92672>|</span>
+</span></span></code></pre></div><p>With <code>\x</code> enabled, results are displayed as:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=display:flex><span><span style=color:#75715e>-------------
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>id: <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>name: reily
+</span></span><span style=display:flex><span><span style=color:#75715e>-------------
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>id: <span style=color:#ae81ff>2</span>
+</span></span><span style=display:flex><span>name: alex
+</span></span><span style=display:flex><span><span style=color:#75715e>-------------
+</span></span></span></code></pre></div><p>With <code>\x auto</code>, results are adjusted to your screensize. If your screen is not
+wide enough to view the first result, it displays the results as the second.</p><h2 id=re-running-a-query>Re-running a query</h2><p>When you run a query, you can also have that query be re-run for you automatically by leveraging the <a href=https://www.postgresql.org/docs/current/app-psql.html><code>\watch</code></a> command on a psql session.</p><p>You must first run the query you&rsquo;d like, and then invoke the watch command.</p><pre tabindex=0><code class=language-psql data-lang=psql>select * from my_table;
+
+-- re-run this query every 1 second
+\watch 1
+</code></pre></div><div class=pagination><a href=/til/git-includeif/ class="left arrow">&#8592;</a>
+<a href=/til/git-whatchanged/ class="right arrow">&#8594;</a>
+<a href=# class=top>Top</a></div></main><footer><span>&copy; <time datetime="2022-08-12 02:38:35.051952941 +0000 UTC m=+0.108344549">2022</time> Hector Rios. Made with <a href=https://gohugo.io>Hugo</a> using the <a href=https://github.com/EmielH/tale-hugo/>Tale</a> theme.</span></footer></body></html>

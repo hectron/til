@@ -1,0 +1,15 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Open new tmux panes in current dir &#183; TIL</title><link rel=stylesheet href=/til/css/style.css><link rel=stylesheet href=/til/css/fonts.css><link rel=icon type=image/png sizes=32x32 href=/til/images/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/til/images/favicon-16x16.png><link rel=apple-touch-icon sizes=180x180 href=/til/images/apple-touch-icon.png><link href rel=alternate type=application/rss+xml title=TIL></head><body><nav class=nav><div class=nav-container><a href=/><h2 class=nav-title>TIL</h2></a><ul></ul></div></nav><main><div class=post><div class=post-info><span>Written by</span>
+Hector Rios<br><span>on&nbsp;</span><time datetime="2021-02-15 00:00:00 +0000 UTC">February 15, 2021</time></div><h1 class=post-title>Open new tmux panes in current dir</h1><div class=post-line></div><h1 id=tldr>tl;dr</h1><pre tabindex=0><code># Set new panes to open in current directory
+bind c new-window -c &#34;#{pane_current_path}&#34;
+bind &#39;&#34;&#39; split-window -c &#34;#{pane_current_path}&#34;
+bind % split-window -h -c &#34;#{pane_current_path}&#34;
+</code></pre><h1 id=the-story>The story</h1><p>Do you ever have the problem where you open up tmux in a specific directory, and
+every window + pane is then opened at that specific directory? Fret no more!</p><p>You can use <code>pane_current_path</code> to let tmux know which directory your pane
+currently is, and open the new window in that directory. It&rsquo;s a super easy
+addition to your <code>.tmux.conf</code> file:</p><pre tabindex=0><code># Set new panes to open in current directory
+bind c new-window -c &#34;#{pane_current_path}&#34;
+bind &#39;&#34;&#39; split-window -c &#34;#{pane_current_path}&#34;
+bind % split-window -h -c &#34;#{pane_current_path}&#34;
+</code></pre></div><div class=pagination><a href=/til/2021-02-13/ class="left arrow">&#8592;</a>
+<a href=/til/fzf-vim/ class="right arrow">&#8594;</a>
+<a href=# class=top>Top</a></div></main><footer><span>&copy; <time datetime="2022-08-12 02:38:35.036743718 +0000 UTC m=+0.093135226">2022</time> Hector Rios. Made with <a href=https://gohugo.io>Hugo</a> using the <a href=https://github.com/EmielH/tale-hugo/>Tale</a> theme.</span></footer></body></html>
